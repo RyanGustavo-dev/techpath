@@ -4,6 +4,8 @@ Plataforma pessoal de estudos e recolocação profissional em TI — estática, 
 Trilhas com lições reais, exercícios de cenário, quizzes com explicação, laboratórios, revisão espaçada,
 plano diário adaptativo, preparação para entrevistas e acompanhamento simples de candidaturas.
 
+**Site publicado:** https://ryangustavo-dev.github.io/techpath/
+
 > A plataforma ajuda a estudar, praticar e manter a constância. Ela **não** garante entrevistas nem contratação.
 
 ---
