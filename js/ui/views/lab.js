@@ -123,6 +123,7 @@ export function labView(ctx, labId) {
         ${ls?.completedAt ? html`<p class="ok-text">${icon('check', 16)} Última sessão registrada em ${fmtDate(ls.lastPracticedAt || ls.completedAt)}.</p>` : ''}
         ${!ls?.completedAt || (lab.repeatable && (ls.lastPracticedAt || ls.completedAt) !== ctx.today())
           ? html`<button class="btn primary" data-action="lab-complete">${icon('check', 16)} ${ls?.completedAt ? 'Registrar nova sessão' : 'Registrar conclusão'}</button>` : ''}
+        ${ls?.completedAt && mods.length === 1 ? html`<a class="btn ghost" href="#/modulo/${mods[0].id}">Voltar ao módulo</a>` : ''}
       </section>`;
   }
   return { render, actions };

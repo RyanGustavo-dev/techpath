@@ -7,7 +7,15 @@ import { dueCards } from '../../core/srs.js';
 
 export function practiceView(ctx) {
   const cat = ctx.catalog;
+  const filters = [
+    ['all', 'Tudo'], ['browser', 'No navegador'], ['computer', 'No computador'],
+  ];
+  let filter = 'all';
   const actions = {
+    'filter-labs': (el) => {
+      filter = el.dataset.arg;
+      ctx.rerender({ focus: `#lab-filter-${filter}` });
+    },
     'go-module': () => {
       const sel = document.getElementById('pm-select');
       if (sel?.value) ctx.navigate(`#/praticar/modulo/${sel.value}`);
@@ -20,7 +28,20 @@ export function practiceView(ctx) {
     const due = dueCards(s.cards, today).length;
     const studied = cat.modules.filter((m) => isStudied(s, cat, m.id) || isDemonstrated(s, m.id)).length;
     return html`
-      ${pageHead('Praticar', 'Quizzes com explicação, flashcards, laboratórios e simulações de incidentes.')}
+      ${pageHead('Prática', 'Escolha uma atividade e confira o que precisa para começar.', html`<a class="btn ghost" href="#/revisoes">Revisões${due ? ` (${due})` : ''}</a>`)}
+      <section class="card">
+        <h2>${icon('flask', 18)} Laboratórios e simulações de incidentes</h2>
+        <div class="chips lab-filters" role="group" aria-label="Filtrar laboratórios pelo local da prática">
+          ${filters.map(([id, label]) => html`<button class="chip ${filter === id ? 'active' : ''}" id="lab-filter-${id}" data-action="filter-labs" data-arg="${id}" aria-pressed="${filter === id}">${label}</button>`)}
+        </div>
+        <div class="lab-grid">
+          ${cat.labs.filter((lab) => filter === 'all' || lab.where === filter || lab.where === 'hybrid').map((l) => {
+            const ls = s.labs[l.id];
+            return html`<a class="lab-card" href="#/lab/${l.id}">
+              <strong>${l.title}</strong>
+              <span class="small muted">${l.objective}</span>
+              <span class="row gap wrap">${whereBadge(l.where)} <span class="tag">${icon('clock', 14)} ${l.minutes} min</span> ${ls?.completedAt ? html`<span class="tag ok">${icon('check', 14)} concluído${ls.selfRating ? ` · ${ls.selfRating}/5` : ''}</span>` : ''}</span>
+            </a>
       <div class="grid-2">
         <section class="card">
           <h2>${icon('quiz', 18)} Quizzes</h2>
@@ -47,17 +68,7 @@ export function practiceView(ctx) {
         </section>
       </div>
 
-      <section class="card">
-        <h2>${icon('flask', 18)} Laboratórios e simulações de incidentes</h2>
-        <p class="muted small">Cada laboratório indica claramente se a atividade é uma simulação no navegador (logs e saídas fictícias) ou se precisa ser executada no seu computador. O site não executa comandos nem verifica arquivos locais.</p>
-        <div class="lab-grid">
-          ${cat.labs.map((l) => {
-            const ls = s.labs[l.id];
-            return html`<a class="lab-card" href="#/lab/${l.id}">
-              <strong>${l.title}</strong>
-              <span class="small muted">${l.objective}</span>
-              <span class="row gap wrap">${whereBadge(l.where)} <span class="tag">${icon('clock', 14)} ${l.minutes} min</span> ${ls?.completedAt ? html`<span class="tag ok">${icon('check', 14)} concluído${ls.selfRating ? ` · ${ls.selfRating}/5` : ''}</span>` : ''}</span>
-            </a>`;
+`;
           })}
         </div>
       </section>`;

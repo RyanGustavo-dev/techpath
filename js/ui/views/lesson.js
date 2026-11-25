@@ -4,7 +4,7 @@ import { icon } from '../icons.js';
 import { trackTag, difficulty } from '../components.js';
 import { markLessonRead, recordExercise } from '../../core/actions.js';
 import { buildQuiz } from '../../core/quiz.js';
-import { nextLesson } from '../../core/progress.js';
+import { nextLesson, moduleNextStep } from '../../core/progress.js';
 import { createQuizRunner } from '../quizRunner.js';
 
 export function lessonView(ctx, lessonId) {
@@ -95,6 +95,7 @@ export function lessonView(ctx, lessonId) {
     const next = lessons[idx + 1];
     const related = (L.related || []).map((id) => cat.lessonById.get(id)).filter(Boolean);
     const nextUnread = nextLesson(s, cat, m.id);
+    const step = moduleNextStep(s, cat, m.id);
     return html`
       <nav class="crumbs" aria-label="Navegação"><a href="#/trilha">Minha Trilha</a> / <a href="#/modulo/${m.id}">${m.title}</a> / <span>Lição ${idx + 1} de ${lessons.length}</span></nav>
       <header class="lesson-head card t-${t.color}">
@@ -142,11 +143,11 @@ export function lessonView(ctx, lessonId) {
 
       <section class="card finish" id="after-read" tabindex="-1">
         ${ls.readAt ? html`
-          <p>${icon('check', 18)} Leitura registrada. Lembre: ler não é dominar — o domínio é demonstrado no teste do módulo.</p>
+          <p>${icon('check', 18)} Leitura registrada.</p>
           <div class="row gap wrap">
             ${next ? html`<a class="btn primary" href="#/licao/${next.id}">Próxima lição: ${next.title} ${icon('arrow', 16)}</a>` : ''}
-            ${!nextUnread ? html`<a class="btn ${next ? '' : 'primary'}" href="#/teste/${m.id}">${icon('award', 16)} Teste de conclusão do módulo</a>` : ''}
-            <a class="btn ghost" href="#/hoje">Voltar ao plano de hoje</a>
+            ${!nextUnread ? html`<a class="btn ${next ? '' : 'primary'}" href="${step.href}">${step.label}</a>` : ''}
+            <a class="btn ghost" href="#/modulo/${m.id}">Voltar ao módulo</a>
           </div>`
         : html`
           <p>Terminou de estudar? Registre a leitura para acompanhar o progresso e ativar os flashcards do módulo.</p>

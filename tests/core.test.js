@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { createInitialState } from '../js/core/state.js';
 import { buildCatalog } from '../js/core/catalog.js';
-import { moduleProgress, moduleStatus, prereqsMet, isWeak, PASS_SCORE } from '../js/core/progress.js';
+import { moduleProgress, moduleStatus, prereqsMet, isWeak, currentModule, moduleNextStep, PASS_SCORE } from '../js/core/progress.js';
 import { schedule, dueCards, previewIntervals, scheduleModuleReview, INTERVALS } from '../js/core/srs.js';
 import { buildQuiz, recordQuiz } from '../js/core/quiz.js';
 import { buildPlan, isTaskDone, daysAway } from '../js/core/recommend.js';
@@ -50,6 +50,21 @@ function miniCatalog() {
 const answersFor = (ids, correctCount) => ids.map((qid, i) => ({ qid, chosen: i < correctCount ? 0 : 1 }));
 
 // ---------------- Progresso e pré-requisitos ----------------
+test('retomada parte da leitura existente, apresenta prática e respeita a escolha de foco', () => {
+  const c = realCatalog;
+  const s = createInitialState(T);
+  assert.equal(currentModule(s, c), null);
+  markLessonRead(s, c, 'd1-l1', T);
+  assert.equal(currentModule(s, c).id, 'd1');
+  assert.equal(moduleNextStep(s, c, 'd1').href, '#/lab/drill-log-report');
+  completeLab(s, 'drill-log-report', { selfRating: 4 }, T);
+  assert.equal(moduleNextStep(s, c, 'd1').href, '#/teste/d1');
+  s.focusModuleId = 'a5';
+  const { state: restored } = parseBackup(exportBackup(s));
+  assert.equal(currentModule(restored, c).id, 'a5');
+  assert.equal(moduleNextStep(restored, c, 'a5').href, '#/licao/a5-l1');
+});
+
 test('progresso começa em zero e leitura não equivale a domínio', () => {
   const cat = miniCatalog(); const s = createInitialState(T);
   assert.equal(moduleProgress(s, cat, 'm1').percent, 0);

@@ -37,6 +37,7 @@ export function createInitialState(now = todayStr()) {
     today: { date: null, skipped: [], minutes: null, done: [] },
     notes: {},          // lessonId -> texto livre
     diagnosticDoneAt: null,
+    focusModuleId: null,
   };
 }
 

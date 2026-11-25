@@ -1,7 +1,7 @@
 // Estudar Hoje: plano do dia (estável ao longo do dia), com motivos, troca de tarefas e ajuste de tempo.
 import { html, fmtDate } from '../dom.js';
 import { icon } from '../icons.js';
-import { pageHead, bar } from '../components.js';
+import { pageHead, bar, continueStudy } from '../components.js';
 import { buildPlan, isTaskDone } from '../../core/recommend.js';
 import { award, XP } from '../../core/gamification.js';
 
@@ -10,6 +10,7 @@ const TYPE_LABEL = { diagnostic: 'Diagnóstico', lesson: 'Lição', test: 'Teste
 
 export function todayView(ctx) {
   const cat = ctx.catalog;
+  let showPlan = false;
 
   function ensureDay(s, today) {
     if (s.today.date !== today) s.today = { date: today, skipped: [], minutes: null, plan: null };
@@ -26,6 +27,7 @@ export function todayView(ctx) {
   }
 
   const actions = {
+    'toggle-plan': () => { showPlan = !showPlan; ctx.rerender({ focus: '#toggle-plan' }); },
     'set-minutes': (el) => {
       const v = Number(el.dataset.arg || el.value);
       if (!(v >= 15 && v <= 300)) return;
@@ -53,8 +55,8 @@ export function todayView(ctx) {
   function render() {
     const today = ctx.today();
     let s = ctx.state;
-    if (s.today.date !== today || !s.today.plan) { ctx.commit((st) => { ensureDay(st, today); recompute(st, today); }); s = ctx.state; }
-    const plan = s.today.plan;
+    if (showPlan && (s.today.date !== today || !s.today.plan)) { ctx.commit((st) => { ensureDay(st, today); recompute(st, today); }); s = ctx.state; }
+    const plan = showPlan ? s.today.plan : { tasks: [] };
     const doneFlags = plan.tasks.map((t) => isTaskDone(t, s, cat, today));
     const doneCount = doneFlags.filter(Boolean).length;
     const allDone = plan.tasks.length > 0 && doneCount === plan.tasks.length;
@@ -65,8 +67,23 @@ export function todayView(ctx) {
     const budget = plan.budget;
     const presets = [30, 45, 60, 90, 120];
     return html`
-      ${pageHead('Estudar Hoje', `${fmtDate(today)} · plano montado por regras transparentes, a partir do seu progresso.`, html`<button class="btn ghost" data-action="replan">${icon('refresh', 16)} Recalcular</button>`)}
-
+      ${pageHead('Estudar Hoje', fmtDate(today))}
+      ${continueStudy(ctx) || html`<section class="card">
+        <h2>Escolha por onde começar</h2>
+        <p>Abra a trilha e escolha um assunto que você queira estudar.</p>
+        <a class="btn primary" href="#/trilha">Abrir Minha Trilha</a>
+      </section>`}
+      <section class="card">
+        <h2>Plano sugerido</h2>
+        <p>Use a lista se quiser combinar estudo, revisões e carreira no tempo de hoje.</p>
+        <div class="row gap wrap">
+          <button class="btn" id="toggle-plan" type="button" data-action="toggle-plan" aria-expanded="${showPlan}" aria-controls="daily-suggestions">${showPlan ? 'Recolher sugestões' : 'Ver sugestões do dia'}</button>
+          <a class="btn ghost" href="#/revisoes">Ir às revisões</a>
+        </div>
+      </section>
+      <div id="daily-suggestions" ${showPlan ? '' : 'hidden'}>
+      ${showPlan ? html`
+      <div class="row end"><button class="btn ghost" data-action="replan">${icon('refresh', 16)} Recalcular</button></div>
       <section class="card today-top">
         <div>
           <h2 class="h-small">Tempo disponível hoje</h2>
@@ -77,7 +94,7 @@ export function todayView(ctx) {
           <p class="tiny muted">Padrão nas configurações: ${s.settings.dailyMinutes} min. Alterar aqui vale só para hoje.</p>
         </div>
         <div class="today-progress">
-          <div class="row between"><span class="small">${doneCount}/${plan.tasks.length} tarefas</span><span class="small">${studied} min registrados hoje</span></div>
+          <div class="row between"><span class="small">${doneCount}/${plan.tasks.length} tarefas</span><span class="small">${studied} min estimados hoje</span></div>
           ${bar(plan.tasks.length ? (doneCount / plan.tasks.length) * 100 : 0, { label: 'Tarefas concluídas hoje' })}
           <p class="tiny muted">Planejado: ~${plan.used} min de ${budget}.</p>
         </div>
@@ -123,7 +140,8 @@ export function todayView(ctx) {
           <li>As tarefas são escolhidas por pontuação até preencher o tempo disponível (com 10% de tolerância).</li>
         </ol>
         <p class="tiny muted">Os pesos, o tempo diário e a meta semanal podem ser ajustados em Configurações.</p>
-      </details>`;
+      </details>` : ''}
+      </div>`;
   }
   return { render, actions };
 }

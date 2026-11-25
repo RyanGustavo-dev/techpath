@@ -1,7 +1,22 @@
 // Componentes visuais reutilizáveis (retornam HTML seguro).
 import { html, raw } from './dom.js';
 import { icon } from './icons.js';
-import { STATUS_LABELS } from '../core/progress.js';
+import { currentModule, moduleNextStep, STATUS_LABELS } from '../core/progress.js';
+
+export function continueStudy(ctx) {
+  const module = currentModule(ctx.state, ctx.catalog);
+  if (!module) return '';
+  const step = moduleNextStep(ctx.state, ctx.catalog, module.id);
+  return html`
+    <section class="card study-focus">
+      <h2>Continuar na trilha</h2>
+      <p>${ctx.catalog.trackById.get(module.track).title} · ${module.title}</p>
+      <div class="row gap wrap">
+        <a class="btn primary" href="${step.href}">${step.label}</a>
+        ${step.href !== `#/modulo/${module.id}` ? html`<a class="btn ghost" href="#/modulo/${module.id}">Ver módulo</a>` : ''}
+      </div>
+    </section>`;
+}
 
 export function bar(pct, { label = '', tone = '' } = {}) {
   const v = Math.max(0, Math.min(100, Math.round(pct)));

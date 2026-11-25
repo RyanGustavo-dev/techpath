@@ -12,12 +12,12 @@ plano diário adaptativo, preparação para entrevistas e acompanhamento simples
 
 ## Como usar o TechPath
 
-Abra **Minha Trilha → Como usar** na aplicação. O guia em `#/guia` reúne os atalhos para os exercícios da primeira semana e um roteiro flexível de 90 dias.
+Abra **Início → Como usar** na aplicação. A tela inicial também retoma o último módulo lido ou aquele que você definiu como foco. O guia em `#/guia` reúne os atalhos para os exercícios da primeira semana e um roteiro flexível de 90 dias.
 
 1. Em **Configurações**, ajuste o tempo diário, a meta semanal de candidaturas e os dias de programação.
 2. Em **Entrevistas → Requisitos de vagas**, registre competências de duas vagas que você consideraria.
-3. Faça o diagnóstico de **Suporte a aplicações**. Reserve cerca de 30 minutos. Se o dia estiver corrido, vá direto a uma lição ou prática.
-4. Em **Estudar Hoje**, use **Recalcular** depois do diagnóstico para atualizar as sugestões.
+3. Escolha um módulo em **Minha Trilha** e, se quiser fixá-lo, selecione **Definir como meu foco**. O diagnóstico de **Suporte a aplicações** fica disponível para quando quiser identificar lacunas.
+4. Em **Estudar Hoje**, abra **Ver sugestões do dia** se quiser um plano. Use **Recalcular** para atualizar a lista com seu progresso.
 5. Faça um laboratório. Nos testes com casos de avaliação, escreva hipótese, evidência e próximo passo antes de ver as alternativas. A pontuação usa as alternativas e a resposta escrita fica disponível para comparação.
 6. Treine entrevistas e registre candidaturas ao longo da semana. Exporte o backup em **Configurações** antes de trocar de navegador ou dispositivo.
 
@@ -61,7 +61,7 @@ O progresso fica no navegador. Para levar o progresso do teste local para o site
 npm test
 ```
 
-(equivale a `node --test tests/*.test.js`; requer Node 18+). São 26 testes cobrindo:
+(equivale a `node --test tests/*.test.js`; requer Node 18+). São 27 testes cobrindo:
 
 - cálculo de progresso e as quatro dimensões (estudado, praticado, demonstrado, revisão);
 - pré-requisitos ("bloqueado" é só um aviso);
@@ -101,7 +101,7 @@ js/data/                   CONTEÚDO EDUCACIONAL (dados, sem interface)
   index.js                 monta o catálogo + requisitos de vagas e tipos de vaga
 js/ui/                     INTERFACE
   dom.js, icons.js, components.js, quizRunner.js
-  views/                   uma tela por arquivo (path, lesson, quizzes, practice, lab, today, reviews, career, progress, settings, guide)
+  views/                   uma tela por arquivo (path, lesson, quizzes, practice, lab, today, reviews, career, progress, settings, guide, home)
 tests/core.test.js
 ```
 
@@ -238,7 +238,7 @@ Se mudar o formato do **estado salvo** (não do conteúdo), incremente `SCHEMA_V
 
 **Implementado:**
 
-- **Entrega 1:** layout responsivo (sidebar no desktop, barra inferior no celular), 7 áreas, trilhas, mapa visual, progresso, persistência, configurações e tema escuro como padrão (claro opcional).
+- **Entrega 1:** layout responsivo (barra lateral no desktop e inferior no celular), página inicial, retomada por módulo e navegação em 6 áreas, trilhas, mapa visual, progresso, persistência, configurações e tema escuro como padrão (claro opcional).
 - **Entrega 2:** 36 lições, 166 perguntas de prática, 40 casos de avaliação, diagnóstico por trilha e 13 laboratórios e desafios.
 - **Entrega 3:** revisão espaçada, revisões de módulo, recomendações explicadas ("Por que isto?"), modo retomada, histórico, XP, níveis, sequência e conquistas.
 - **Entrega 4:** 25 perguntas de entrevista por cargo, candidaturas semanais, requisitos de vagas que influenciam o plano, backup validado, testes automatizados e esta documentação.
@@ -246,7 +246,7 @@ Se mudar o formato do **estado salvo** (não do conteúdo), incremente `SCHEMA_V
 
 **Testado:**
 
-- 26 testes automatizados passando.
+- 27 testes automatizados passando.
 - Nesta atualização, foram conferidos no navegador o guia, o fluxo completo do teste de SQL com justificativas, a recomendação de um desafio de Python e o registro de conclusão desse desafio.
 
 **Pendente / possíveis próximas fases:**

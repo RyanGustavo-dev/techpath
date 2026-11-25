@@ -125,3 +125,26 @@ export function trackProgress(state, catalog, trackId) {
 export function nextLesson(state, catalog, moduleId) {
   return (catalog.lessonsByModule.get(moduleId) || []).find((l) => !state.lessons[l.id]?.readAt) || null;
 }
+
+export function currentModule(state, catalog) {
+  const pinned = catalog.moduleById.get(state.focusModuleId);
+  if (pinned) return pinned;
+  const recent = Object.entries(state.lessons)
+    .filter(([id, entry]) => entry.readAt && catalog.lessonById.has(id))
+    .reverse()
+    .sort((a, b) => b[1].readAt.localeCompare(a[1].readAt))[0];
+  return recent ? catalog.moduleById.get(catalog.lessonById.get(recent[0]).moduleId) : null;
+}
+
+export function moduleNextStep(state, catalog, moduleId) {
+  const lesson = nextLesson(state, catalog, moduleId);
+  if (lesson && !isDemonstrated(state, moduleId)) return { href: `#/licao/${lesson.id}`, label: lesson.title };
+
+  const labs = catalog.labs.filter((lab) => lab.modules.includes(moduleId));
+  if (!labs.some((lab) => state.labs[lab.id]?.completedAt)) {
+    const lab = labs.find((item) => item.practiceOnly && item.modules.length === 1) || labs[0];
+    if (lab) return { href: `#/lab/${lab.id}`, label: lab.title };
+  }
+  if (!isDemonstrated(state, moduleId)) return { href: `#/teste/${moduleId}`, label: 'Teste de conclusão' };
+  return { href: `#/modulo/${moduleId}`, label: 'Ver práticas e revisões do módulo' };
+}

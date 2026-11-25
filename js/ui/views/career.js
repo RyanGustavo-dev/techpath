@@ -185,8 +185,8 @@ export function careerView(ctx, tab) {
   function render() {
     const body = tab === 'candidaturas' ? appsTab() : tab === 'requisitos' ? reqsTab() : questionsTab();
     return html`
-      ${pageHead('Entrevistas e carreira', 'Perguntas técnicas e comportamentais por cargo, acompanhamento simples de candidaturas e requisitos de vagas.')}
-      ${tabs([{ id: 'perguntas', label: 'Perguntas' }, { id: 'candidaturas', label: 'Candidaturas' }, { id: 'requisitos', label: 'Requisitos de vagas' }], tab, 'tab')}
+      ${pageHead('Carreira', 'Escolha uma vaga, registre o que ela pede e pratique como apresentar sua experiência.')}
+      ${tabs([{ id: 'perguntas', label: 'Treinar entrevista' }, { id: 'requisitos', label: 'Requisitos das vagas' }, { id: 'candidaturas', label: 'Candidaturas' }], tab, 'tab')}
       ${body}`;
   }
   void empty;

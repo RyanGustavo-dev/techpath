@@ -11,8 +11,8 @@ export function guideView() {
         <ol>
           <li>Em <a href="#/config">Configurações</a>, ajuste o tempo disponível e a meta de candidaturas. Use 90 minutos quando couber e reduza em dias apertados.</li>
           <li>Compare duas vagas que você realmente consideraria. Em <a href="#/entrevistas/requisitos">Requisitos de vagas</a>, registre os assuntos que aparecem, como SQL, Linux ou redes.</li>
-          <li>Faça o <a href="#/diagnostico">diagnóstico de Suporte a aplicações</a>. Anote uma lacuna e um assunto em que já consegue explicar o raciocínio. Se o tempo estiver curto, comece pela <a href="#/licao/a5-l1">lição de JOIN</a>.</li>
-          <li>Abra <a href="#/hoje">Estudar Hoje</a> e use <strong>Recalcular</strong> para incorporar o resultado. Comece com um assunto e termine com um exercício ou registro curto.</li>
+          <li>Escolha um módulo em <a href="#/trilha">Minha Trilha</a>. Se já começou por <a href="#/modulo/d1">Python para automação de suporte</a>, marque <strong>Definir como meu foco</strong> para retomá-lo depois. Se estiver em dúvida, use o <a href="#/diagnostico">diagnóstico de Suporte a aplicações</a>.</li>
+          <li>Use <strong>Continuar na trilha</strong> para chegar ao próximo passo do módulo. Em <a href="#/hoje">Estudar Hoje</a>, abra <strong>Ver sugestões do dia</strong> quando quiser encaixar revisões ou carreira na sessão.</li>
           <li>Separe hoje uma vaga aderente. Ajuste o resumo do currículo com uma experiência que você consegue defender em entrevista e registre o envio em <a href="#/entrevistas/candidaturas">Candidaturas</a>.</li>
         </ol>
       </section>

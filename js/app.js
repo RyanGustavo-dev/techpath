@@ -17,6 +17,7 @@ import { careerView } from './ui/views/career.js';
 import { progressView } from './ui/views/progress.js';
 import { settingsView } from './ui/views/settings.js';
 import { guideView } from './ui/views/guide.js';
+import { homeView } from './ui/views/home.js';
 
 // ---------- Armazenamento ----------
 function pickAdapter() {
@@ -34,11 +35,10 @@ let { state, error: loadError } = store.load();
 
 // ---------- Contexto compartilhado pelas telas ----------
 const NAV = [
-  { id: 'trilha', label: 'Minha Trilha', short: 'Trilha', icon: 'map', href: '#/trilha', match: /^#\/(trilha|modulo|licao|teste|diagnostico|guia)/ },
-  { id: 'hoje', label: 'Estudar Hoje', short: 'Hoje', icon: 'today', href: '#/hoje', match: /^#\/hoje/ },
-  { id: 'praticar', label: 'Praticar', short: 'Praticar', icon: 'practice', href: '#/praticar', match: /^#\/(praticar|lab)/ },
-  { id: 'revisoes', label: 'Revisões', short: 'Revisões', icon: 'review', href: '#/revisoes', match: /^#\/(revisoes|revisar-modulo)/ },
-  { id: 'entrevistas', label: 'Entrevistas', short: 'Carreira', icon: 'mic', href: '#/entrevistas', match: /^#\/entrevistas/ },
+  { id: 'inicio', label: 'Início', short: 'Início', icon: 'compass', href: '#/inicio', match: /^#\/(inicio|hoje|guia)/ },
+  { id: 'trilha', label: 'Minha Trilha', short: 'Trilhas', icon: 'map', href: '#/trilha', match: /^#\/(trilha|modulo|licao|teste|diagnostico)/ },
+  { id: 'praticar', label: 'Prática e revisões', short: 'Prática', icon: 'practice', href: '#/praticar', match: /^#\/(praticar|lab|revisoes|revisar-modulo)/ },
+  { id: 'entrevistas', label: 'Carreira', short: 'Carreira', icon: 'mic', href: '#/entrevistas', match: /^#\/entrevistas/ },
   { id: 'evolucao', label: 'Minha Evolução', short: 'Evolução', icon: 'chart', href: '#/evolucao', match: /^#\/evolucao/ },
   { id: 'config', label: 'Configurações', short: 'Ajustes', icon: 'settings', href: '#/config', match: /^#\/config/ },
 ];
@@ -147,7 +147,7 @@ function renderNav() {
 }
 
 function highlightNav() {
-  const h = location.hash || '#/trilha';
+  const h = location.hash || '#/inicio';
   for (const n of NAV) {
     const a = document.querySelector(`[data-nav="${n.id}"]`);
     if (!a) continue;
@@ -159,6 +159,7 @@ function highlightNav() {
 
 // ---------- Rotas ----------
 const ROUTES = [
+  [/^#\/inicio$/, () => homeView(ctx)],
   [/^#\/trilha$/, (p) => pathView(ctx, p)],
   [/^#\/modulo\/([\w-]+)$/, (p) => moduleView(ctx, p[1])],
   [/^#\/licao\/([\w-]+)$/, (p) => lessonView(ctx, p[1])],
@@ -181,8 +182,8 @@ function notFound() {
 }
 
 function route() {
-  const h = location.hash || '#/trilha';
-  if (!location.hash) history.replaceState(null, '', '#/trilha');
+  const h = location.hash || '#/inicio';
+  if (!location.hash) history.replaceState(null, '', '#/inicio');
   let c = null;
   for (const [re, make] of ROUTES) {
     const m = h.match(re);
