@@ -10,7 +10,7 @@
 //      flashcards vencidos ......................... 55
 //      reforço de módulo fraco ..................... 50 + peso da trilha·10
 //      teste de conclusão (lições lidas) ............ 30 + peso·10
-//      acelerar (diagnóstico ≥ 80%) ................ 28 + peso·10
+//      acelerar (4+ respostas, diagnóstico ≥ 80%) ................ 28 + peso·10
 //      lição nova: peso da trilha·10
 //                  + 4 se o módulo já está em andamento (continuidade)
 //                  + até 5 por requisitos de vagas cadastrados
@@ -27,6 +27,7 @@
 import { diffDays, weekKey } from './util.js';
 import { lastActiveDate } from './state.js';
 import { dueCards } from './srs.js';
+import { canAccelerate } from './quiz.js';
 import {
   isDemonstrated, isStudied, isWeak, prereqsMet, moduleStatus, nextLesson, reviewDue,
 } from './progress.js';
@@ -48,14 +49,14 @@ function jobBoost(state, skills, moduleId) {
 function trackDSessionsThisWeek(state, catalog, today) {
   const wk = weekKey(today);
   const days = new Set();
-  for (const a of state.attempts) {
-    if (a.date >= wk && a.moduleId && catalog.moduleById.get(a.moduleId)?.track === 'D') days.add(a.date);
+  for (const lab of catalog.labs) {
+    const entry = state.labs[lab.id];
+    if (!entry || !lab.modules.some((mid) => catalog.moduleById.get(mid)?.track === 'D')) continue;
+    for (const date of new Set([entry.completedAt, entry.lastPracticedAt, ...(entry.practiceDates || [])])) {
+      if (date >= wk && date <= today) days.add(date);
+    }
   }
-  for (const [lid, l] of Object.entries(state.lessons)) {
-    const les = catalog.lessonById.get(lid);
-    if (les && l.readAt >= wk && catalog.moduleById.get(les.moduleId)?.track === 'D') days.add(l.readAt);
-  }
-  return days.size;
+  return days;
 }
 
 function interviewAnswersThisWeek(state, today) {
@@ -74,8 +75,8 @@ export function buildPlan(state, catalog, today, { minutes = null, skills = [] }
   const notes = [];
 
   if (!state.diagnosticDoneAt) {
-    cands.push({ id: 'diagnostic', type: 'diagnostic', title: 'Teste diagnóstico inicial', minutes: 20, score: 100, target: '#/diagnostico',
-      reasons: ['Ainda não há diagnóstico: ele identifica o que você já domina e permite pular etapas.'] });
+    cands.push({ id: 'diagnostic', type: 'diagnostic', title: 'Diagnóstico de Suporte a aplicações', minutes: 32, score: 100, target: '#/diagnostico',
+      reasons: ['Use o resultado para escolher o que revisar primeiro em HTTP, logs, SQL e incidentes.'] });
   }
 
   // Revisões de módulos demonstrados
@@ -116,8 +117,9 @@ export function buildPlan(state, catalog, today, { minutes = null, skills = [] }
   }
   const weakSet = new Set(weak.map((m) => m.id));
 
-  const dSessions = trackDSessionsThisWeek(state, catalog, today);
-  const dBehind = dSessions < s.devSessionsPerWeek;
+  const devDays = trackDSessionsThisWeek(state, catalog, today);
+  const dSessions = devDays.size;
+  const dBehind = dSessions < s.devSessionsPerWeek && !devDays.has(today);
 
   // Lições, testes e aceleração
   for (const m of catalog.modules) {
@@ -128,7 +130,7 @@ export function buildPlan(state, catalog, today, { minutes = null, skills = [] }
     const lesson = nextLesson(state, catalog, m.id);
     const noLessonRead = (catalog.lessonsByModule.get(m.id) || []).every((l) => !state.lessons[l.id]?.readAt);
     const testTried = (state.moduleStats[m.id]?.testLast ?? null) !== null;
-    if (diag && diag.score >= 0.8 && noLessonRead && !testTried) {
+    if (canAccelerate(diag) && noLessonRead && !testTried) {
       cands.push({ id: `fast:${m.id}`, type: 'test', moduleId: m.id, title: `Acelerar: teste de ${m.title}`, minutes: 10, score: 28 + w(m.id) * 10,
         target: `#/teste/${m.id}`, reasons: [`Você acertou ${Math.round(diag.score * 100)}% no diagnóstico deste módulo.`, 'Passando no teste de conclusão, o módulo é marcado como demonstrado e você pula as lições.'] });
       continue;
@@ -149,7 +151,7 @@ export function buildPlan(state, catalog, today, { minutes = null, skills = [] }
     if (m.level === 'opcional') { score -= 2; reasons.push('Conteúdo opcional.'); }
     const order = (catalog.modulesByTrack.get(m.track) || []).indexOf(m);
     score += Math.max(0, 3 - order * 0.4);
-    if (m.track === 'D' && dBehind) { score += 6; reasons.push(`Trilha D: ${dSessions}/${s.devSessionsPerWeek} sessões de programação nesta semana.`); }
+    if (m.track === 'D' && dBehind) { score += 6; reasons.push(`Trilha D: esta lição ajuda a preparar a prática de código da semana.`); }
     const weakPre = (m.prereqs || []).filter((p) => weakSet.has(p));
     if (weakPre.length) { score -= 12; reasons.push(`Pré-requisito com dificuldade: ${weakPre.map((p) => catalog.moduleById.get(p).title).join(', ')}.`); }
     reasons.unshift(`Trilha ${m.track} — ${catalog.trackById.get(m.track).title} (prioridade ${s.trackWeights[m.track]}).`);
@@ -159,13 +161,24 @@ export function buildPlan(state, catalog, today, { minutes = null, skills = [] }
   // Laboratórios
   if (!recovery) {
     for (const lab of catalog.labs) {
-      if (state.labs[lab.id]?.completedAt) continue;
+      if (lab.repeatable || state.labs[lab.id]?.completedAt) continue;
       const ready = lab.modules.every((mid) => isStudied(state, catalog, mid) || isDemonstrated(state, mid));
       if (!ready) continue;
       let score = 20 + Math.max(...lab.modules.map(w)) * 10;
       const reasons = ['Os módulos relacionados já foram estudados: hora de aplicar.'];
       if (lab.modules.some((mid) => catalog.moduleById.get(mid).track === 'D') && dBehind) { score += 6; reasons.push('Conta como sessão de programação da semana.'); }
       cands.push({ id: `lab:${lab.id}`, type: 'lab', labId: lab.id, title: lab.title, minutes: lab.minutes, score, target: `#/lab/${lab.id}`, reasons });
+    }
+  }
+
+  if (dBehind && !recovery) {
+    const lastPractice = (lab) => state.labs[lab.id]?.lastPracticedAt || state.labs[lab.id]?.completedAt || '';
+    const challenge = catalog.labs.filter((lab) => lab.repeatable && lab.minutes <= budget)
+      .sort((a, b) => lastPractice(a).localeCompare(lastPractice(b)))[0];
+    if (challenge) {
+      cands.push({ id: `dev:${challenge.id}`, type: 'lab', labId: challenge.id, practiceToday: true,
+        title: challenge.title, minutes: challenge.minutes, score: 36, target: `#/lab/${challenge.id}`,
+        reasons: [`Trilha D: ${dSessions}/${s.devSessionsPerWeek} dias de prática na semana. Use a variação se já tiver feito o desafio.`] });
     }
   }
 
@@ -195,7 +208,7 @@ export function buildPlan(state, catalog, today, { minutes = null, skills = [] }
   const limit = budget * 1.1;
   for (const c of pool) {
     if (c.type === 'lesson' && lessons >= maxLessons) continue;
-    if (used + c.minutes > limit && tasks.length > 0) continue;
+    if (used + c.minutes > limit) continue;
     tasks.push(c);
     used += c.minutes;
     if (c.type === 'lesson') lessons++;
@@ -218,7 +231,10 @@ export function isTaskDone(task, state, catalog, today) {
       const n = Object.values(state.cards).filter((c) => c.lastReviewed === today).length;
       return n >= task.count || dueCards(state.cards, today).length === 0;
     }
-    case 'lab': return !!state.labs[task.labId]?.completedAt;
+    case 'lab': {
+      const lab = state.labs[task.labId];
+      return task.practiceToday ? lab?.lastPracticedAt === today : !!lab?.completedAt;
+    }
     case 'interview': return Object.values(state.interviews).some((i) => i.updatedAt === today);
     case 'applications': return !!state.applications.weeks[weekKey(today)]?.updatedAt && state.applications.weeks[weekKey(today)].updatedAt === today;
     default: return false;

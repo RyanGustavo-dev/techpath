@@ -74,7 +74,19 @@ export function progressView(ctx) {
         </section>
         <section class="card">
           <h2 class="h-small">Histórico de tentativas</h2>
-          ${attempts.length ? html`<ul class="attempts">${attempts.map((a) => html`<li><span class="tiny muted">${fmtDate(a.date)}</span> <span>${KIND[a.kind]}${a.moduleId ? ` · ${cat.moduleById.get(a.moduleId)?.title}` : ''}</span> <span class="tag ${a.correct / a.total >= 0.75 ? 'ok' : ''}">${a.correct}/${a.total}</span></li>`)}</ul>` : html`<p class="muted small">Nenhum quiz ainda.</p>`}
+          ${attempts.length ? html`<ul class="attempts">${attempts.map((a) => html`
+            <li><span class="tiny muted">${fmtDate(a.date)}</span>
+              <span>${KIND[a.kind]}${a.moduleId ? ` · ${cat.moduleById.get(a.moduleId)?.title}` : ''}</span>
+              <span class="tag ${a.correct / a.total >= 0.75 ? 'ok' : ''}">${a.correct}/${a.total}</span>
+              ${Array.isArray(a.caseNotes) && a.caseNotes.length ? html`
+                <details class="attempt-notes">
+                  <summary>Ver raciocínio registrado</summary>
+                  ${a.caseNotes.map((note) => {
+                    const question = cat.questionById.get(note?.qid);
+                    return question ? html`<p><strong>${question.prompt}</strong></p><p>${note.reasoning}</p><p><strong>Referência</strong> ${question.explain}</p>` : '';
+                  })}
+                </details>` : ''}
+            </li>`)}</ul>` : html`<p class="muted small">Nenhum quiz ainda.</p>`}
         </section>
       </div>
 

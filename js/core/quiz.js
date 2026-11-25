@@ -5,6 +5,11 @@ import { award, XP } from './gamification.js';
 import { PASS_SCORE, RECENT_WINDOW } from './progress.js';
 import { scheduleModuleReview } from './srs.js';
 
+export const DIAGNOSTIC_MIN_QUESTIONS = 4;
+export function canAccelerate(diagnostic) {
+  return diagnostic?.total >= DIAGNOSTIC_MIN_QUESTIONS && diagnostic.score >= 0.8;
+}
+
 /**
  * Seleciona perguntas e embaralha a ordem das perguntas e das alternativas.
  * Prioriza perguntas nunca vistas e as que o usuário errou por último.
@@ -81,6 +86,10 @@ export function recordQuiz(state, catalog, { kind, moduleId = null, lessonId = n
   }
 
   const attempt = { date: today, ts: Date.now(), kind, moduleId, lessonId, total, correct, wrong, perModule };
+  if (kind === 'test') {
+    const caseNotes = answers.filter((a) => a.reasoning).map(({ qid, reasoning }) => ({ qid, reasoning }));
+    if (caseNotes.length) attempt.caseNotes = caseNotes;
+  }
   state.attempts.push(attempt);
   if (state.attempts.length > MAX_ATTEMPTS) state.attempts = state.attempts.slice(-MAX_ATTEMPTS);
   recordActivity(state, today, Math.max(1, Math.round(total * 1.2)));

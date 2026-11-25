@@ -5,6 +5,8 @@ import * as B from './content-b.js';
 import * as C from './content-c.js';
 import * as DE from './content-de.js';
 import { labs } from './labs.js';
+import { practiceDrills } from './drills.js';
+import { assessmentQuestions } from './assessment.js';
 import { flashcards } from './flashcards.js';
 import { interviews, roles } from './interviews.js';
 import { buildCatalog } from '../core/catalog.js';
@@ -45,8 +47,9 @@ export const catalog = buildCatalog({
   modules,
   lessons: [...A.lessons, ...B.lessons, ...C.lessons, ...DE.lessons],
   questions: [...A.questions, ...B.questions, ...C.questions, ...DE.questions],
+  assessmentQuestions,
   flashcards,
-  labs,
+  labs: [...labs, ...practiceDrills],
   interviews,
 });
 

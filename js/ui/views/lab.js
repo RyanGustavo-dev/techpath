@@ -48,6 +48,10 @@ export function labView(ctx, labId) {
     'lab-rate': (el) => { ctx.commit((s) => { ensure(s).selfRating = Number(el.value); }); },
     'lab-complete': () => {
       const ls = ctx.state.labs[lab.id] || {};
+      if (lab.practiceOnly && (!(ls.notes || '').trim() || (ls.criteria || []).length !== lab.criteria.length)) {
+        ctx.toast('Registre seu resultado e confirme os critérios antes de concluir.', 'info');
+        return;
+      }
       if (!ls.selfRating) { ctx.toast('Escolha uma autoavaliação antes de concluir.', 'error'); return; }
       ctx.commit((s) => completeLab(s, lab.id, { selfRating: ls.selfRating, notes: ls.notes || '' }, ctx.today()));
       ctx.rerender({ focus: '#lab-done' });
@@ -100,10 +104,11 @@ export function labView(ctx, labId) {
 
       ${lab.offline ? html`
         <section class="card offline">
-          <h2>${icon('terminal', 18)} Parte prática no seu computador</h2>
+          <h2>${icon('terminal', 18)} ${lab.where === 'browser' ? 'Exercício de escrita' : 'Parte prática no seu computador'}</h2>
           <div class="notice">${icon('info', 18)}<div>${md(lab.offline.intro)}</div></div>
           <ol class="checklist">${lab.offline.steps.map((st, i) => html`<li><label><input type="checkbox" data-change="chk" data-kind="checks" data-arg="${i}" ${(ls?.checks || []).includes(i) ? 'checked' : ''}/> <span>${mdInline(st)}</span></label></li>`)}</ol>
-          <p class="tiny muted">As marcações são apenas o seu registro — o site não verifica a execução.</p>
+          ${lab.reference ? html`<details><summary>Ver resposta de referência</summary>${md(lab.reference)}</details>` : ''}
+          ${lab.where !== 'browser' ? html`<p class="tiny muted">Use os resultados esperados para verificar a execução no computador.</p>` : ''}
         </section>` : ''}
 
       <section class="card" id="lab-done" tabindex="-1">
@@ -115,8 +120,9 @@ export function labView(ctx, labId) {
             <option value="">Selecione…</option>
             ${[[1, 'Precisei de muita ajuda'], [2, 'Entendi parcialmente'], [3, 'Consegui com algumas dúvidas'], [4, 'Consegui com segurança'], [5, 'Conseguiria explicar para outra pessoa']].map(([v, t]) => html`<option value="${v}" ${ls?.selfRating === v ? 'selected' : ''}>${v} — ${t}</option>`)}
           </select></label>
-        ${ls?.completedAt ? html`<p class="ok-text">${icon('check', 16)} Laboratório registrado como concluído. Você pode atualizar as anotações e a autoavaliação quando quiser.</p>`
-          : html`<button class="btn primary" data-action="lab-complete">${icon('check', 16)} Registrar conclusão</button>`}
+        ${ls?.completedAt ? html`<p class="ok-text">${icon('check', 16)} Última sessão registrada em ${fmtDate(ls.lastPracticedAt || ls.completedAt)}.</p>` : ''}
+        ${!ls?.completedAt || (lab.repeatable && (ls.lastPracticedAt || ls.completedAt) !== ctx.today())
+          ? html`<button class="btn primary" data-action="lab-complete">${icon('check', 16)} ${ls?.completedAt ? 'Registrar nova sessão' : 'Registrar conclusão'}</button>` : ''}
       </section>`;
   }
   return { render, actions };

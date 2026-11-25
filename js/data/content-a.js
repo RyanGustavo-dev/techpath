@@ -132,10 +132,10 @@ Para testar sem o curl, \`openssl s_client -connect intranet.exemplo.com:443 -se
 
   // ---------------- a2 ----------------
   {
-    id: 'a2-l1', moduleId: 'a2', title: '4xx: o problema está na requisição', minutes: 20,
+    id: 'a2-l1', moduleId: 'a2', title: '4xx: quem recusou a requisição e por quê?', minutes: 20,
     objective: 'Interpretar os principais códigos 4xx e saber o que verificar em cada um.',
     explanation: `
-Códigos **4xx** indicam que o servidor recebeu a requisição, mas a recusou por algo relacionado **ao que o cliente enviou ou a quem está enviando**. O servidor está funcionando. Isso muda a investigação: você olha dados, credenciais, permissões e URL — não CPU ou infraestrutura.
+Códigos **4xx** indicam que o componente que respondeu percebeu um problema ao atender à requisição. Identifique quem gerou o status e compare dados, credenciais, permissões, URL e regras de roteamento. Um 404 após deploy pode vir de uma alteração na configuração do gateway.
 
 - **400 Bad Request** — requisição malformada: JSON inválido, campo com tipo errado, parâmetro obrigatório ausente. Veja o corpo da resposta: APIs bem feitas dizem qual campo falhou.
 - **401 Unauthorized** — na prática, "não autenticado": sem credencial, token expirado, assinatura inválida. A solução passa por autenticar de novo.
@@ -172,7 +172,7 @@ Os dois estão autenticados (senão seria 401). O 403 e a mensagem indicam falta
       explain: 'Correlação com mudança recente ("após o deploy") é uma das pistas mais fortes em suporte. Confirme comparando a lista de rotas (Swagger/OpenAPI) antes e depois do deploy. Hipótese alternativa: um proxy/gateway com regra de roteamento alterada para /v1 — o log do gateway mostraria se a requisição chegou à aplicação.',
     },
     summary: [
-      '4xx = servidor funcionando; o problema está na requisição ou em quem a faz.',
+      '4xx é uma pista. Identifique quem respondeu e verifique requisição, permissões e roteamento.',
       '401 = não autenticado; 403 = autenticado sem permissão.',
       '404 após deploy → suspeite de rota alterada.',
       'Compare a requisição que falha com uma que funciona.',
@@ -189,11 +189,11 @@ Erros **5xx** indicam falha **do lado do servidor**. A pergunta mais útil é: *
 - **500 Internal Server Error** — gerado pela **aplicação**: exceção não tratada, bug, erro em query, dado inesperado. O lugar certo para procurar é o log da aplicação (stack trace).
 - **502 Bad Gateway** — gerado pelo **proxy**: ele tentou falar com a aplicação (upstream) e recebeu uma resposta inválida ou a conexão foi recusada/fechada. Causas: aplicação parada, porta errada no \`proxy_pass\`, worker que morreu no meio da resposta (ex.: worker Gunicorn morto por timeout ou falta de memória).
 - **503 Service Unavailable** — serviço **temporariamente indisponível**: manutenção, sobrecarga, nenhuma instância saudável no balanceador, limite de conexões. Pode ser gerado pelo proxy, pelo balanceador ou pela própria aplicação.
-- **504 Gateway Timeout** — o proxy esperou a aplicação e o **tempo acabou**. A aplicação está viva, mas lenta: consulta pesada, chamada externa travada, lock no banco.
+- **504 Gateway Timeout** — o proxy esperou a aplicação e o **tempo acabou**. O upstream pode estar lento, indisponível ou inacessível a partir do gateway. Compare o tempo de conexão e de resposta e verifique os logs dos dois lados.
 
 **Roteiro prático:**
 1. Escopo: todos os usuários ou alguns? Todas as rotas ou uma? Desde quando?
-2. Qual componente respondeu? Corpo HTML com "nginx" → o próprio proxy gerou o erro.
+2. Qual componente respondeu? O corpo HTML e os cabeçalhos dão pistas. Confirme no log do proxy e procure a requisição no upstream.
 3. Log do proxy (\`/var/log/nginx/error.log\`) para 502/504; log da aplicação para 500.
 4. A aplicação está rodando? (\`systemctl status\`, \`docker ps\`). A porta está escutando? (\`ss -tlnp\`)
 5. Mudança recente: deploy, migração, variável de ambiente, aumento de carga?

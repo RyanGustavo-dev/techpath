@@ -16,6 +16,7 @@ import { reviewsView } from './ui/views/reviews.js';
 import { careerView } from './ui/views/career.js';
 import { progressView } from './ui/views/progress.js';
 import { settingsView } from './ui/views/settings.js';
+import { guideView } from './ui/views/guide.js';
 
 // ---------- Armazenamento ----------
 function pickAdapter() {
@@ -33,7 +34,7 @@ let { state, error: loadError } = store.load();
 
 // ---------- Contexto compartilhado pelas telas ----------
 const NAV = [
-  { id: 'trilha', label: 'Minha Trilha', short: 'Trilha', icon: 'map', href: '#/trilha', match: /^#\/(trilha|modulo|licao|teste|diagnostico)/ },
+  { id: 'trilha', label: 'Minha Trilha', short: 'Trilha', icon: 'map', href: '#/trilha', match: /^#\/(trilha|modulo|licao|teste|diagnostico|guia)/ },
   { id: 'hoje', label: 'Estudar Hoje', short: 'Hoje', icon: 'today', href: '#/hoje', match: /^#\/hoje/ },
   { id: 'praticar', label: 'Praticar', short: 'Praticar', icon: 'practice', href: '#/praticar', match: /^#\/(praticar|lab)/ },
   { id: 'revisoes', label: 'Revisões', short: 'Revisões', icon: 'review', href: '#/revisoes', match: /^#\/(revisoes|revisar-modulo)/ },
@@ -171,6 +172,7 @@ const ROUTES = [
   [/^#\/revisoes$/, () => reviewsView(ctx)],
   [/^#\/entrevistas(?:\/(\w+))?$/, (p) => careerView(ctx, p[1] || 'perguntas')],
   [/^#\/evolucao$/, () => progressView(ctx)],
+  [/^#\/guia$/, guideView],
   [/^#\/config$/, () => settingsView(ctx)],
 ];
 

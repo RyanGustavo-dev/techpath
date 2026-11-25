@@ -116,9 +116,9 @@ export function todayView(ctx) {
         <ol>
           <li><strong>Revisões primeiro, com limite:</strong> flashcards vencidos (mais atrasados e com mais erros primeiro) ocupam no máximo ${Math.round(s.settings.reviewShare * 100)}% do tempo. O excedente é distribuído nos próximos dias.</li>
           <li><strong>Dificuldades antes de avançar:</strong> módulos com acerto recente abaixo de 60% (com 4+ respostas) geram uma tarefa de reforço. Lições que dependem deles perdem prioridade.</li>
-          <li><strong>Aceleração:</strong> se o diagnóstico de um módulo foi de 80% ou mais, o plano sugere o teste de conclusão em vez das lições.</li>
+          <li><strong>Aceleração:</strong> se você respondeu pelo menos quatro questões no diagnóstico do módulo e acertou pelo menos 80%, o plano sugere o teste de conclusão em vez das lições.</li>
           <li><strong>Lições novas</strong> são pontuadas pelo peso da trilha (A: ${s.settings.trackWeights.A}, B: ${s.settings.trackWeights.B}, C: ${s.settings.trackWeights.C}, D: ${s.settings.trackWeights.D}, E: ${s.settings.trackWeights.E}), por continuidade, pelos requisitos de vagas cadastrados e pela ordem da trilha. Pré-requisitos não atendidos tiram a lição da lista (mas você pode acessá-la pela trilha).</li>
-          <li><strong>Programação:</strong> se a Trilha D estiver abaixo de ${s.settings.devSessionsPerWeek} sessões na semana, ela ganha prioridade.</li>
+          <li><strong>Programação:</strong> o plano sugere um desafio de código em dias diferentes até chegar a ${s.settings.devSessionsPerWeek} sessões na semana, se houver tempo. Registre a conclusão do desafio para contar a sessão.</li>
           <li><strong>Retomada:</strong> após ${s.settings.recoveryAfterDays}+ dias sem estudo, o plano encolhe (até 15 flashcards, 1 lição, sem laboratório longo). Nenhum progresso é removido.</li>
           <li>As tarefas são escolhidas por pontuação até preencher o tempo disponível (com 10% de tolerância).</li>
         </ol>

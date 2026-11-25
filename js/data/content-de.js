@@ -283,7 +283,7 @@ Perguntas comportamentais ("conte sobre um problema difícil que você resolveu"
       title: 'Estrutura (preencha com os seus detalhes reais)',
       body: `
 ~~~
-S: Na Areopagus Softhouse, um módulo de produção levava cerca de 50 segundos para responder,
+S: Em um trabalho anterior, um módulo de produção levava cerca de 50 segundos para responder,
    e os usuários reclamavam da lentidão.
 T: Eu fiquei responsável por investigar e melhorar o tempo de resposta.
 A: [o que você realmente fez — por exemplo: como mediu, como encontrou a consulta lenta,
@@ -486,7 +486,7 @@ export const questions = [
   { id: 'e1-q01', moduleId: 'e1', lessonId: 'e1-l1', difficulty: 1, prompt: 'Na estrutura STAR, qual parte deve ocupar a maior parte da resposta?', options: ['Situação', 'Tarefa', 'Ação', 'Resultado'], answer: 2, explain: 'A Ação mostra o que você fez e como pensou — é o que o entrevistador quer avaliar.' },
   { id: 'e1-q02', moduleId: 'e1', lessonId: 'e1-l1', difficulty: 2, prompt: 'Durante a entrevista, perguntam qual índice você criou na otimização e você não lembra. Melhor resposta?', options: ['Inventar um nome plausível', 'Dizer que não lembra o detalhe exato e explicar como investigaria e decidiria hoje (plano de execução, colunas do filtro)', 'Mudar de assunto', 'Dizer que foi outra pessoa'], answer: 1, explain: 'Honestidade + raciocínio técnico transmitem mais confiança do que um detalhe inventado, que pode ser desmentido na próxima pergunta.' },
   { id: 'e1-q03', moduleId: 'e1', lessonId: 'e1-l1', difficulty: 2, prompt: 'Para uma vaga de infraestrutura, qual ênfase da sua experiência é mais relevante?', options: ['Telas em React', 'Pipelines, SSH para deploy automatizado, ambientes de staging, Docker e investigação de incidentes de ambiente', 'Modelagem de produto', 'Nenhuma'], answer: 1, explain: 'A mesma experiência pode ser contada com ênfases diferentes, de acordo com o que a vaga valoriza.' },
-  { id: 'e1-q04', moduleId: 'e1', lessonId: 'e1-l1', difficulty: 3, prompt: 'Qual frase de Resultado é a mais forte?', options: ['"Ficou muito melhor."', '"O tempo de resposta caiu de ~50 s para ~11 s, e passei a medir antes e depois de cada otimização."', '"O cliente ficou feliz."', '"Resolvi tudo sozinho em um dia."'], answer: 1, explain: 'Números verificáveis e aprendizado concreto. Evite exageros que não consegue sustentar.' },
+  { id: 'e1-q04', moduleId: 'e1', lessonId: 'e1-l1', difficulty: 3, prompt: 'Qual frase de Resultado é a mais forte?', options: ['"Ficou muito melhor."', '"O tempo de resposta do módulo caiu de cerca de 50 segundos para 11 segundos."', '"O cliente ficou feliz."', '"Resolvi tudo sozinho em um dia."'], answer: 1, explain: 'Números verificáveis e aprendizado concreto. Evite exageros que não consegue sustentar.' },
 
   // e2
   { id: 'e2-q01', moduleId: 'e2', lessonId: 'e2-l1', difficulty: 1, prompt: 'Uma vaga lista 6 requisitos obrigatórios; você atende a 4 e a alguns desejáveis. O que fazer?', options: ['Não se candidatar', 'Candidatar-se, destacando os pontos aderentes, e preparar-se para as lacunas', 'Mentir sobre os 2 restantes', 'Esperar ter 100%'], answer: 1, explain: 'Cerca de 60–70% dos obrigatórios é uma referência comum para tentar. As lacunas viram plano de estudo.' },

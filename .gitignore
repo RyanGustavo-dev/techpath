@@ -1,5 +1,6 @@
 node_modules/
 .claude/
 *.log
+techpath-backup-*.json
 .DS_Store
 Thumbs.db

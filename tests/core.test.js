@@ -9,7 +9,7 @@ import { schedule, dueCards, previewIntervals, scheduleModuleReview, INTERVALS }
 import { buildQuiz, recordQuiz } from '../js/core/quiz.js';
 import { buildPlan, isTaskDone, daysAway } from '../js/core/recommend.js';
 import { award, awardCapped, levelInfo, computeStreak, XP } from '../js/core/gamification.js';
-import { markLessonRead, recordExercise, reviewCard, saveApplicationsWeek } from '../js/core/actions.js';
+import { markLessonRead, recordExercise, reviewCard, saveApplicationsWeek, completeLab } from '../js/core/actions.js';
 import { exportBackup, parseBackup, createStore, memoryAdapter, validateState, STORAGE_KEY } from '../js/core/storage.js';
 import { addDays, seededRandom, weekKey } from '../js/core/util.js';
 import { catalog as realCatalog } from '../js/data/index.js';
@@ -239,10 +239,50 @@ test('recomendação: dificuldade em JOIN gera reforço antes de avançar para o
 test('recomendação: diagnóstico alto permite acelerar (teste em vez de lições)', () => {
   const cat = miniCatalog(); const s = createInitialState(T);
   recordQuiz(s, cat, { kind: 'diagnostic', answers: answersFor(['m1-q1', 'm1-q2'], 2) }, T);
+  assert.ok(!buildPlan(s, cat, T, { minutes: 120 }).tasks.some((t) => t.id === 'fast:m1'));
+  recordQuiz(s, cat, { kind: 'diagnostic', answers: answersFor(['m1-q1', 'm1-q2', 'm1-q3', 'm1-q4'], 4) }, T);
   const p = buildPlan(s, cat, T, { minutes: 120 });
   const ids = [...p.tasks, ...p.alternatives].map((t) => t.id);
   assert.ok(ids.includes('fast:m1'));
   assert.ok(!ids.includes('lesson:m1-l1'));
+});
+
+test('caso de avaliação fica fora da prática e a justificativa sobrevive ao backup', () => {
+  const c = realCatalog;
+  const s = createInitialState(T);
+  const [scenario] = c.assessmentsByModule.get('a5');
+  assert.ok(!c.questionsByModule.get('a5').includes(scenario));
+  assert.ok(!c.questionsByLesson.get(scenario.lessonId).includes(scenario));
+  assert.ok(!c.questions.includes(scenario));
+  recordQuiz(s, c, { kind: 'test', moduleId: 'a5', answers: [
+    { qid: scenario.id, chosen: scenario.answer, reasoning: 'Conferir a granularidade do resultado.' },
+  ] }, T);
+  const restored = parseBackup(exportBackup(s));
+  assert.deepEqual(restored.state.attempts[0].caseNotes, [
+    { qid: scenario.id, reasoning: 'Conferir a granularidade do resultado.' },
+  ]);
+});
+
+test('desafio de código do plano conta por dia e pode ser retomado em outra semana', () => {
+  const c = realCatalog;
+  const s = createInitialState(T);
+  s.diagnosticDoneAt = T;
+  const plan = (date) => buildPlan(s, c, date, { minutes: 90 }).tasks;
+  const first = plan(T).find((t) => t.practiceToday);
+  assert.ok(first);
+  completeLab(s, first.labId, { selfRating: 4 }, T);
+  assert.ok(isTaskDone(first, s, c, T));
+  assert.ok(!plan(T).some((t) => t.practiceToday));
+  const next = addDays(T, 1);
+  const second = plan(next).find((t) => t.practiceToday);
+  assert.notEqual(first.labId, second.labId);
+  completeLab(s, second.labId, { selfRating: 4 }, next);
+  assert.ok(!plan(addDays(T, 2)).some((t) => t.practiceToday));
+  assert.equal(isTaskDone(first, s, c, next), false);
+  const later = addDays(T, 7);
+  completeLab(s, first.labId, { selfRating: 4 }, later);
+  assert.ok(isTaskDone(first, s, c, later));
+  assert.equal(s.labs[first.labId].completedAt, T);
 });
 
 test('recomendação: modo retomada após dias sem estudo limita revisões e não apaga progresso', () => {

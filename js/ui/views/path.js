@@ -32,14 +32,14 @@ export function pathView(ctx) {
           ${!s.diagnosticDoneAt ? html`
             <span class="eyebrow">${icon('compass', 16)} Comece por aqui</span>
             <h2>Descubra o que você já domina</h2>
-            <p>O diagnóstico tem 2 perguntas por módulo. Módulos em que você acertar tudo podem ser acelerados com o teste de conclusão — sem precisar ler as lições.</p>
-            <div class="row gap"><a class="btn primary" href="#/diagnostico">${icon('play', 16)} Fazer diagnóstico (~20 min)</a><a class="btn ghost" href="#/hoje">Ver plano de hoje</a></div>`
+            <p>Comece por Suporte a aplicações e use o resultado para escolher o que praticar em SQL, HTTP e logs.</p>
+            <div class="row gap"><a class="btn primary" href="#/diagnostico">${icon('play', 16)} Fazer diagnóstico</a><a class="btn ghost" href="#/guia">Como usar o TechPath</a></div>`
           : next ? html`
             <span class="eyebrow">${icon('target', 16)} Próximo passo sugerido</span>
             <h2>${next.title}</h2>
             <p class="muted">${next.reasons[0]}</p>
-            <div class="row gap"><a class="btn primary" href="${next.target}">${icon('play', 16)} Começar · ${next.minutes} min</a><a class="btn ghost" href="#/hoje">Plano completo de hoje</a></div>`
-          : html`<h2>Tudo em dia</h2><p>Nenhuma tarefa pendente agora. Que tal um laboratório ou uma simulação de entrevista?</p>`}
+            <div class="row gap"><a class="btn primary" href="${next.target}">${icon('play', 16)} Começar · ${next.minutes} min</a><a class="btn ghost" href="#/hoje">Plano completo de hoje</a><a class="btn ghost" href="#/guia">Como usar</a></div>`
+          : html`<h2>Tudo em dia</h2><p>Nenhuma tarefa pendente agora. Que tal um laboratório ou uma simulação de entrevista?</p><a href="#/guia">Como usar o TechPath</a>`}
         </div>
         <div class="hero-stats">
           <div class="stat">${icon('star', 18)}<strong>Nível ${lv.level}</strong><span>${s.xp.total} XP</span></div>

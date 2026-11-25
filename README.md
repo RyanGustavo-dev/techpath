@@ -10,6 +10,17 @@ plano diário adaptativo, preparação para entrevistas e acompanhamento simples
 
 ---
 
+## Como usar o TechPath
+
+Abra **Minha Trilha → Como usar** na aplicação. O guia em `#/guia` reúne os atalhos para os exercícios da primeira semana e um roteiro flexível de 90 dias.
+
+1. Em **Configurações**, ajuste o tempo diário, a meta semanal de candidaturas e os dias de programação.
+2. Em **Entrevistas → Requisitos de vagas**, registre competências de duas vagas que você consideraria.
+3. Faça o diagnóstico de **Suporte a aplicações**. Reserve cerca de 30 minutos. Se o dia estiver corrido, vá direto a uma lição ou prática.
+4. Em **Estudar Hoje**, use **Recalcular** depois do diagnóstico para atualizar as sugestões.
+5. Faça um laboratório. Nos testes com casos de avaliação, escreva hipótese, evidência e próximo passo antes de ver as alternativas. A pontuação usa as alternativas e a resposta escrita fica disponível para comparação.
+6. Treine entrevistas e registre candidaturas ao longo da semana. Exporte o backup em **Configurações** antes de trocar de navegador ou dispositivo.
+
 ## Como executar localmente
 
 Os navegadores bloqueiam módulos JavaScript abertos direto do disco (`file://`), então use um servidor local simples.
@@ -19,7 +30,7 @@ Na pasta do projeto:
 python -m http.server 8080
 ```
 
-Depois acesse `http://localhost:8080`. Alternativas: `npx serve .` (Node) ou a extensão *Live Server* do VS Code.
+Depois acesse `http://localhost:8080/#/guia` para começar pelo passo a passo. Alternativas: `npx serve .` (Node) ou a extensão *Live Server* do VS Code.
 
 Depois de carregado, o site funciona sem internet. Só os links externos de documentação precisam de conexão.
 
@@ -32,7 +43,9 @@ Depois de carregado, o site funciona sem internet. Só os links externos de docu
 
 Como o roteamento usa `#/rotas`, não é preciso configurar nenhum redirecionamento. Qualquer hospedagem estática (Netlify, Cloudflare Pages) também funciona: basta enviar a pasta.
 
-**Importante:** o progresso fica no navegador de quem usa. Publicar o site não publica os seus dados.
+O progresso fica no navegador. Para levar o progresso do teste local para o site publicado, exporte o backup na origem local e importe no endereço publicado. Guarde o JSON fora do repositório, pois ele pode conter anotações e respostas de entrevista.
+
+[Documentação oficial do GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
 ## Backup do progresso
 
@@ -48,7 +61,7 @@ Como o roteamento usa `#/rotas`, não é preciso configurar nenhum redirecioname
 npm test
 ```
 
-(equivale a `node --test tests/*.test.js`; requer Node 18+). São 24 testes cobrindo:
+(equivale a `node --test tests/*.test.js`; requer Node 18+). São 26 testes cobrindo:
 
 - cálculo de progresso e as quatro dimensões (estudado, praticado, demonstrado, revisão);
 - pré-requisitos ("bloqueado" é só um aviso);
@@ -56,7 +69,7 @@ npm test
 - recomendações (diagnóstico primeiro, orçamento de tempo, reforço antes de avançar, aceleração pelo diagnóstico, modo retomada, Trilha D abaixo da meta, conclusão de tarefas);
 - XP sem duplicação (lição, exercício, pergunta, teste, flashcards com teto diário, candidaturas por semana);
 - exportação/importação de backup (válido, inválido, outro app, versão futura, XP adulterado) e armazenamento corrompido ou cheio;
-- integridade do conteúdo real (ids, referências, gabaritos, cada lição com 3+ perguntas).
+- integridade do catálogo e separação dos casos de avaliação, persistência das respostas escritas e contagem de sessões de programação em dias diferentes.
 
 ---
 
@@ -82,11 +95,13 @@ js/core/                   REGRAS (puras, sem DOM, testadas em Node)
 js/data/                   CONTEÚDO EDUCACIONAL (dados, sem interface)
   tracks.js                trilhas e módulos
   content-a.js ...-de.js   lições e banco de perguntas por trilha
+  assessment.js          casos reservados aos testes de conclusão
+  drills.js              desafios curtos com dados e resultados de referência
   flashcards.js, labs.js, interviews.js
   index.js                 monta o catálogo + requisitos de vagas e tipos de vaga
 js/ui/                     INTERFACE
   dom.js, icons.js, components.js, quizRunner.js
-  views/                   uma tela por arquivo (path, lesson, quizzes, practice, lab, today, reviews, career, progress, settings)
+  views/                   uma tela por arquivo (path, lesson, quizzes, practice, lab, today, reviews, career, progress, settings, guide)
 tests/core.test.js
 ```
 
@@ -97,12 +112,13 @@ tests/core.test.js
 | Trilhas | 5 (A Suporte a aplicações · B Redes · C Infra/Linux · D Programação · E Empregabilidade) |
 | Módulos | 25, cada um com motivo, cargos, objetivos, pré-requisitos e forma de demonstrar domínio |
 | Lições | 36, cada uma com objetivo, explicação, exemplo técnico, exercício de cenário com feedback por alternativa, quiz, resumo e relacionados |
-| Perguntas | 166, com explicação; dificuldades 1–3 |
+| Perguntas de prática | 166, com explicação e dificuldades de 1 a 3 |
+| Casos de avaliação | 40, distribuídos em dez módulos prioritários. O teste usa três por rodada e prioriza os menos vistos. |
 | Flashcards | 88 |
-| Laboratórios | 7 (simulações com logs fictícios + parte prática no seu computador, claramente indicada) |
+| Laboratórios e desafios | 13, incluindo quatro desafios de código que podem ser repetidos, um de reconciliação SQL e um de comunicação de incidente |
 | Perguntas de entrevista | 25, por cargo, com checklist, resposta de referência e armadilhas |
 
-Os 41 links de documentação oficial foram verificados (HTTP 200) em 24/11/2026. Links podem mudar com o tempo.
+As lições incluem referências externas para aprofundamento.
 Os domínios `exemplo.com`/`exemplo.local` nos exercícios são fictícios de propósito.
 
 ## Modelo de dados (localStorage, chave `techpath:state`)
@@ -112,11 +128,11 @@ Os domínios `exemplo.com`/`exemplo.local` nos exercícios são fictícios de pr
   schemaVersion: 1,
   settings: { dailyMinutes, weeklyAppGoal, devSessionsPerWeek, recoveryAfterDays, reviewShare, trackWeights, theme, motion },
   lessons:   { [lessonId]: { readAt, exerciseDone, exerciseCorrect, exerciseAttempts } },
-  attempts:  [ { date, ts, kind, moduleId, lessonId, total, correct, wrong, perModule } ],  // últimas 600
+  attempts:  [ { date, ts, kind, moduleId, lessonId, total, correct, wrong, perModule, caseNotes? } ],  // últimas 600
   qstats:    { [questionId]: { seen, correct, last, lastDate } },
   moduleStats: { [moduleId]: { recent:[0|1 ×20], testBest, testLast, testPassedAt, diagnostic, review:{box,due} } },
   cards:     { [cardId]: { box, due, reviews, lapses, history:[{d,r}] } },
-  labs:      { [labId]: { stages, checks, criteria, notes, selfRating, completedAt } },
+  labs:      { [labId]: { stages, checks, criteria, notes, selfRating, completedAt, lastPracticedAt?, practiceDates? } },
   interviews:{ [questionId]: { answer, checked, selfScore, updatedAt } },
   applications: { weeks: { [segunda-feira]: { sent, types, responses, interviews, notes } } },
   jobReqs:   { [skillId]: contagem },
@@ -164,13 +180,14 @@ Pontuação das tarefas candidatas (também documentada dentro do app):
 | Flashcards vencidos (no máximo 30% do tempo) | 55 |
 | Reforço de módulo fraco | 50 + peso da trilha × 10 |
 | Teste de conclusão (lições lidas) | 30 + peso × 10 |
-| Acelerar (diagnóstico ≥ 80%, sem lições lidas) | 28 + peso × 10 |
+| Acelerar (quatro ou mais respostas, diagnóstico ≥ 80%, sem lições lidas) | 28 + peso × 10 |
 | Lição nova | peso × 10 · +4 continuidade · +até 5 requisitos de vagas · ±2 nível · +ordem · +6 se a Trilha D está abaixo da meta · −12 se um pré-requisito está fraco |
+| Desafio de código em dia distinto, se abaixo da meta da semana | 36 |
 | Laboratório (módulos estudados) | 20 + peso × 10 |
 | Entrevista (≤ 2 respostas na semana) | 18 |
 | Candidaturas abaixo do ritmo da semana | 16 |
 
-Lições com pré-requisitos não atendidos não entram no plano automático. Seleção gulosa até preencher o tempo (tolerância de 10%), com no máximo 3 lições.
+O diagnóstico inicial abre com Suporte a aplicações selecionado e permite fazer as outras trilhas à parte. Os desafios de código alternam conforme o histórico de prática. Lições com pré-requisitos não atendidos não entram no plano automático. Seleção gulosa até preencher o tempo (tolerância de 10%), com no máximo 3 lições.
 **Modo retomada** (2 ou mais dias sem estudo, configurável): até 15 flashcards, 1 revisão de módulo, 1 lição e nenhum laboratório. O excedente é distribuído nos dias seguintes. Nenhum progresso é removido por inatividade.
 O plano do dia fica fixo (com checkmarks) até você usar **Recalcular**, **Trocar** uma tarefa ou mudar o tempo do dia.
 
@@ -222,19 +239,19 @@ Se mudar o formato do **estado salvo** (não do conteúdo), incremente `SCHEMA_V
 **Implementado:**
 
 - **Entrega 1:** layout responsivo (sidebar no desktop, barra inferior no celular), 7 áreas, trilhas, mapa visual, progresso, persistência, configurações e tema escuro como padrão (claro opcional).
-- **Entrega 2:** 36 lições reais, 166 perguntas, exercícios de cenário com explicação por alternativa, testes de conclusão, diagnóstico por trilha e 7 laboratórios.
+- **Entrega 2:** 36 lições, 166 perguntas de prática, 40 casos de avaliação, diagnóstico por trilha e 13 laboratórios e desafios.
 - **Entrega 3:** revisão espaçada, revisões de módulo, recomendações explicadas ("Por que isto?"), modo retomada, histórico, XP, níveis, sequência e conquistas.
 - **Entrega 4:** 25 perguntas de entrevista por cargo, candidaturas semanais, requisitos de vagas que influenciam o plano, backup validado, testes automatizados e esta documentação.
 - Acessibilidade: navegação por teclado (atalhos 1–4/Enter nos quizzes, espaço/1–4 nos flashcards), foco visível, link "pular para o conteúdo", `aria-live` nos feedbacks e respeito a `prefers-reduced-motion`.
 
 **Testado:**
 
-- 24 testes automatizados passando.
-- No navegador (desktop e 375 px): todas as rotas sem erros de console e sem rolagem horizontal; fluxo completo de lição (exercício, quiz, conclusão), teste de conclusão aprovado (XP, nível, conquista, revisão agendada), sessão de flashcards com os intervalos corretos, plano com reforço de JOIN após erros, importação válida/inválida e tema claro.
+- 26 testes automatizados passando.
+- Nesta atualização, foram conferidos no navegador o guia, o fluxo completo do teste de SQL com justificativas, a recomendação de um desafio de Python e o registro de conclusão desse desafio.
 
 **Pendente / possíveis próximas fases:**
 
-- Mais lições por módulo nos assuntos complementares (ex.: Windows Server e GPO em mais profundidade, Kubernetes básico, Azure) e mais perguntas por lição, para reduzir a repetição em quizzes longos.
+- Os dez módulos prioritários têm casos exclusivos de avaliação. Os demais usam questões de prática no teste de conclusão.
 - As respostas abertas de entrevista são autoavaliadas por checklist. Não há correção automática (proposital: não há IA).
 - Sem sincronização entre dispositivos (exige backend; fora do escopo). O backup em JSON é a ponte.
 - Sem PWA/service worker: o site funciona offline enquanto a aba está aberta, mas abrir sem rede exige que os arquivos estejam acessíveis localmente (servidor local) ou em cache do navegador.

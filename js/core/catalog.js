@@ -1,6 +1,6 @@
 // Monta índices a partir dos dados educacionais e valida a integridade (ids únicos, referências).
 
-export function buildCatalog({ tracks, modules, lessons, questions, flashcards, labs, interviews }) {
+export function buildCatalog({ tracks, modules, lessons, questions, assessmentQuestions = [], flashcards, labs, interviews }) {
   const index = (arr, label) => {
     const m = new Map();
     for (const x of arr) {
@@ -15,13 +15,14 @@ export function buildCatalog({ tracks, modules, lessons, questions, flashcards, 
     trackById: index(tracks, 'Trilha'),
     moduleById: index(modules, 'Módulo'),
     lessonById: index(lessons, 'Lição'),
-    questionById: index(questions, 'Pergunta'),
+    questionById: index([...questions, ...assessmentQuestions], 'Pergunta'),
     cardById: index(flashcards, 'Flashcard'),
     labById: index(labs, 'Laboratório'),
     interviewById: index(interviews, 'Pergunta de entrevista'),
     lessonsByModule: new Map(),
     questionsByModule: new Map(),
     questionsByLesson: new Map(),
+    assessmentsByModule: new Map(),
     cardsByModule: new Map(),
     modulesByTrack: new Map(),
     dependents: new Map(),
@@ -39,13 +40,16 @@ export function buildCatalog({ tracks, modules, lessons, questions, flashcards, 
     if (!cat.moduleById.has(l.moduleId)) throw new Error(`Lição ${l.id}: módulo inexistente`);
     push(cat.lessonsByModule, l.moduleId, l);
   }
-  for (const q of questions) {
+  for (const q of [...questions, ...assessmentQuestions]) {
     if (!cat.moduleById.has(q.moduleId)) throw new Error(`Pergunta ${q.id}: módulo inexistente`);
     if (!Array.isArray(q.options) || q.answer < 0 || q.answer >= q.options.length) throw new Error(`Pergunta ${q.id}: resposta inválida`);
-    push(cat.questionsByModule, q.moduleId, q);
     if (q.lessonId) {
-      if (!cat.lessonById.has(q.lessonId)) throw new Error(`Pergunta ${q.id}: lição inexistente ${q.lessonId}`);
-      push(cat.questionsByLesson, q.lessonId, q);
+      if (cat.lessonById.get(q.lessonId)?.moduleId !== q.moduleId) throw new Error(`Pergunta ${q.id}: lição inválida ${q.lessonId}`);
+    }
+    if (q.assessment) push(cat.assessmentsByModule, q.moduleId, q);
+    else {
+      push(cat.questionsByModule, q.moduleId, q);
+      if (q.lessonId) push(cat.questionsByLesson, q.lessonId, q);
     }
   }
   for (const c of flashcards) {

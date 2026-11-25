@@ -10,7 +10,7 @@ const KIND_LABEL = { lesson: 'Quiz de fixação', practice: 'Prática', test: 'T
 
 export function createQuizRunner(ctx, opts) {
   const { kind, moduleId = null, lessonId = null, title = KIND_LABEL[kind], onRestart, exitHref = null, exitLabel = 'Voltar' } = opts;
-  const st = { items: opts.items, idx: 0, chosen: null, confirmed: false, answers: [], result: null };
+  const st = { items: opts.items, idx: 0, chosen: null, confirmed: false, answers: [], result: null, reasoning: '', alternativesVisible: false };
   const cat = ctx.catalog;
 
   function finish() {
@@ -21,17 +21,23 @@ export function createQuizRunner(ctx, opts) {
   }
 
   const actions = {
+    'qz-reasoning': (el) => { st.reasoning = el.value; },
+    'qz-show-options': () => {
+      if (!st.reasoning.trim()) { ctx.toast('Escreva sua análise antes de abrir as alternativas.', 'info'); return; }
+      st.alternativesVisible = true;
+      ctx.rerender({ focus: '#qz-options' });
+    },
     'qz-choose': (el) => { if (!st.confirmed) { st.chosen = Number(el.dataset.arg); ctx.rerender(); } },
     'qz-confirm': () => {
       if (st.chosen === null || st.confirmed) return;
       st.confirmed = true;
-      st.answers.push({ qid: st.items[st.idx].qid, chosen: st.chosen });
+      st.answers.push({ qid: st.items[st.idx].qid, chosen: st.chosen, reasoning: st.reasoning.trim() });
       ctx.rerender({ focus: '#qz-feedback' });
     },
     'qz-next': () => {
       if (!st.confirmed) return;
       if (st.idx + 1 >= st.items.length) finish();
-      else { st.idx++; st.chosen = null; st.confirmed = false; }
+      else { st.idx++; st.chosen = null; st.confirmed = false; st.reasoning = ''; st.alternativesVisible = false; }
       ctx.rerender({ focus: '#qz-top' });
     },
     'qz-restart': () => { if (onRestart) onRestart(); },
@@ -40,7 +46,7 @@ export function createQuizRunner(ctx, opts) {
   function onKey(e) {
     if (st.result || e.target.matches('input, textarea, select')) return;
     const item = st.items[st.idx];
-    if (!item) return;
+    if (!item || (cat.questionById.get(item.qid).assessment && !st.alternativesVisible)) return;
     const n = Number(e.key);
     if (!st.confirmed && n >= 1 && n <= item.order.length) { st.chosen = item.order[n - 1]; ctx.rerender(); e.preventDefault(); }
     else if (e.key === 'Enter' && !e.target.closest('button,a')) { (st.confirmed ? actions['qz-next'] : actions['qz-confirm'])(); e.preventDefault(); }
@@ -67,6 +73,10 @@ export function createQuizRunner(ctx, opts) {
           <h3>O que revisar</h3>
           <ul class="review-list">${wrongQs.map((q) => html`<li><div class="q-mini">${md(q.prompt)}</div><div class="explain">${icon('info', 16)} <span><strong>Resposta:</strong> ${mdInline(q.options[q.answer])}. ${mdInline(q.explain)}</span></div></li>`)}</ul>
           ${lessonsToReview.length ? html`<p>Lições relacionadas: ${lessonsToReview.map((l) => html`<a href="#/licao/${l.id}" class="chip">${l.title}</a> `)}</p>` : ''}` : html`<p>Nenhum erro nesta rodada.</p>`}
+        ${st.answers.filter((a) => a.reasoning).map((a) => {
+          const q = cat.questionById.get(a.qid);
+          return html`<details class="attempt-notes"><summary>${q.prompt}</summary><p><strong>Sua análise</strong></p><p>${a.reasoning}</p><p><strong>Referência</strong> ${q.explain}</p></details>`;
+        })}
         <div class="row gap">
           ${onRestart ? html`<button class="btn" data-action="qz-restart">${icon('refresh', 16)} ${isTest ? 'Tentar outro teste' : 'Nova rodada'}</button>` : ''}
           ${exitHref ? html`<a class="btn primary" href="${exitHref}">${exitLabel}</a>` : ''}
@@ -89,7 +99,13 @@ export function createQuizRunner(ctx, opts) {
         </div>
         ${bar(((st.idx + (st.confirmed ? 1 : 0)) / st.items.length) * 100, { label: 'Progresso do quiz' })}
         <div class="q-prompt">${md(q.prompt)}</div>
-        <div class="options" role="radiogroup" aria-label="Alternativas">
+        ${q.assessment && !st.alternativesVisible ? html`
+          <label class="field">Sua hipótese, evidência e próximo passo
+            <textarea data-input="qz-reasoning" rows="5" maxlength="2000" placeholder="Suspeito de… Conferiria… Se confirmar, faria…">${st.reasoning}</textarea>
+          </label>
+          <button class="btn primary" data-action="qz-show-options">Ver alternativas</button>
+        ` : html`
+        <div class="options" id="qz-options" tabindex="-1" role="radiogroup" aria-label="Alternativas">
           ${item.order.map((orig, i) => {
             const cls = ['opt'];
             if (st.chosen === orig) cls.push('chosen');
@@ -111,6 +127,7 @@ export function createQuizRunner(ctx, opts) {
             : html`<button class="btn primary" data-action="qz-next">${st.idx + 1 >= st.items.length ? 'Ver resultado' : 'Próxima'} ${icon('arrow', 16)}</button>`}
         </div>
         <p class="muted tiny kbd-hint">Atalhos: teclas 1–${item.order.length} escolhem, Enter confirma/avança.</p>
+        `}
       </section>`;
   }
 

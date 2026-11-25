@@ -2,7 +2,7 @@
 import { html } from '../dom.js';
 import { icon } from '../icons.js';
 import { pageHead, empty } from '../components.js';
-import { buildQuiz } from '../../core/quiz.js';
+import { buildQuiz, canAccelerate, DIAGNOSTIC_MIN_QUESTIONS } from '../../core/quiz.js';
 import { PASS_SCORE, isWeak, isDemonstrated, isStudied } from '../../core/progress.js';
 import { shuffle } from '../../core/util.js';
 import { createQuizRunner } from '../quizRunner.js';
@@ -39,18 +39,26 @@ export function testView(ctx, moduleId) {
   const m = cat.moduleById.get(moduleId);
   if (!m) return notFound();
   const pool = cat.questionsByModule.get(m.id) || [];
-  const count = Math.min(8, pool.length);
+  const cases = cat.assessmentsByModule.get(m.id) || [];
+  const caseCount = Math.min(3, cases.length);
+  const count = Math.min(cases.length ? 2 : 5, pool.length);
   return quizScreen(ctx, {
     title: `Teste de conclusão: ${m.title}`,
-    subtitle: 'Demonstra domínio do módulo — diferente de apenas ter lido as lições.',
+    subtitle: cases.length ? 'Registre seu raciocínio nos casos e compare com a análise de referência.' : 'Confira seu entendimento com perguntas do banco de prática.',
     crumbs: html`<nav class="crumbs"><a href="#/modulo/${m.id}">${icon('back', 14)} ${m.title}</a></nav>`,
-    makeItems: () => buildQuiz(pool, { count, state: ctx.state }),
+    makeItems: () => {
+      const ordered = shuffle(cases).sort((a, b) => (ctx.state.qstats[a.id]?.seen || 0) - (ctx.state.qstats[b.id]?.seen || 0));
+      return [
+        ...buildQuiz(ordered.slice(0, caseCount), { count: caseCount }),
+        ...buildQuiz(pool, { count, state: ctx.state }),
+      ];
+    },
     runnerOpts: { kind: 'test', moduleId: m.id, title: 'Teste de conclusão', exitHref: `#/modulo/${m.id}`, exitLabel: 'Voltar ao módulo' },
     intro: () => {
       const ms = ctx.state.moduleStats[m.id];
       return html`<section class="card">
         <ul>
-          <li>${count} perguntas sorteadas do banco do módulo, em ordem de dificuldade crescente.</li>
+          ${cases.length ? html`<li>${caseCount} casos exclusivos do teste e ${count} perguntas de prática. Escreva sua hipótese, a evidência e o próximo passo nos casos.</li><li>As alternativas definem a pontuação. Compare sua resposta escrita com a explicação para avaliar o raciocínio.</li>` : html`<li>${count} perguntas do banco de prática. Use também os exercícios do módulo para avaliar sua aplicação.</li>`}
           <li>Aprovação com ${Math.round(PASS_SCORE * 100)}% ou mais. Ao passar, o módulo fica como <strong>domínio demonstrado</strong> e uma revisão é agendada para daqui a 7 dias.</li>
           <li>Pode refazer quando quiser. Reprovar não remove nenhum progresso.</li>
           <li>Você pode fazer o teste sem ler as lições, se já conhece o assunto.</li>
@@ -81,16 +89,19 @@ export function moduleReviewView(ctx, moduleId) {
 
 export function diagnosticView(ctx) {
   const cat = ctx.catalog;
-  const picked = new Set(['A', 'B', 'C']);
+  const picked = new Set(['A']);
+  const poolFor = (m) => cat.questionsByModule.get(m.id) || [];
   let runner = null;
   let result = null;
 
   function makeItems() {
     const items = [];
     for (const m of cat.modules.filter((x) => picked.has(x.track))) {
-      const pool = (cat.questionsByModule.get(m.id) || []).filter((q) => (q.difficulty || 1) <= 2);
-      const qs = shuffle(pool.length >= 2 ? pool : cat.questionsByModule.get(m.id)).slice(0, 2);
-      items.push(...buildQuiz(qs, { count: 2, progressive: false }));
+      const pool = poolFor(m);
+      const advanced = shuffle(pool.filter((q) => q.difficulty === 3))[0];
+      const others = shuffle(pool.filter((q) => q !== advanced)).slice(0, DIAGNOSTIC_MIN_QUESTIONS - Number(!!advanced));
+      const sample = advanced ? [...others, advanced] : others;
+      items.push(...buildQuiz(sample, { count: sample.length }));
     }
     return items;
   }
@@ -109,13 +120,13 @@ export function diagnosticView(ctx) {
 
   function perModuleTable(r) {
     const rows = Object.entries(r.perModule).map(([mid, v]) => ({ m: cat.moduleById.get(mid), ...v })).sort((a, b) => a.m.id.localeCompare(b.m.id));
-    const verdict = (v) => (v.c === v.t ? ['Acelerar: faça o teste de conclusão', 'ok', `#/teste/${''}`] : v.c > 0 ? ['Revisar: leia e pratique', 'warn'] : ['Estudar desde o início', 'bad']);
+    const eligible = (v) => canAccelerate({ total: v.t, score: v.c / v.t });
     return html`<section class="card">
       <h2>Resultado por módulo</h2>
-      <p class="muted small">Com 2 perguntas por módulo, o diagnóstico é uma estimativa inicial — o teste de conclusão é que demonstra domínio.</p>
+      <p class="muted small">Use esta amostra para escolher o que revisar. Valide o resultado com um teste e um exercício prático.</p>
       <div class="table-wrap"><table class="table">
         <thead><tr><th>Módulo</th><th>Acertos</th><th>Sugestão</th></tr></thead>
-        <tbody>${rows.map((x) => { const [txt, tone] = verdict(x); return html`<tr><td><a href="#/modulo/${x.m.id}">${x.m.title}</a></td><td>${x.c}/${x.t}</td><td><span class="tag ${tone}">${txt}</span>${x.c === x.t ? html` <a class="small" href="#/teste/${x.m.id}">testar</a>` : ''}</td></tr>`; })}</tbody>
+        <tbody>${rows.map((x) => html`<tr><td><a href="#/modulo/${x.m.id}">${x.m.title}</a></td><td>${x.c}/${x.t}</td><td>${eligible(x) ? html`<a href="#/teste/${x.m.id}">Validar no teste</a>` : 'Revisar os erros e praticar'}</td></tr>`)}</tbody>
       </table></div>
       <a class="btn primary" href="#/hoje">${icon('today', 16)} Ver plano de estudo adaptado</a>
     </section>`;
@@ -123,21 +134,16 @@ export function diagnosticView(ctx) {
 
   function render() {
     if (runner) return html`${pageHead('Diagnóstico inicial')}${runner.render()}${result ? perModuleTable(result) : ''}`;
-    const counts = Object.fromEntries(cat.tracks.map((t) => [t.id, (cat.modulesByTrack.get(t.id) || []).length * 2]));
+    const counts = Object.fromEntries(cat.tracks.map((t) => [t.id, (cat.modulesByTrack.get(t.id) || []).reduce((n, m) => n + Math.min(DIAGNOSTIC_MIN_QUESTIONS, poolFor(m).length), 0)]));
     const total = [...picked].reduce((a, t) => a + counts[t], 0);
     return html`
       ${pageHead('Diagnóstico inicial', 'Verifica seu nível real para não perder tempo com o que você já domina — e não presumir domínio só porque já trabalhou com algo.')}
       <section class="card">
-        <p>Para cada módulo das trilhas escolhidas, 2 perguntas de nível básico/intermediário. No final, você verá a sugestão por módulo:</p>
-        <ul>
-          <li><strong>2/2:</strong> o plano sugere acelerar — fazer direto o teste de conclusão.</li>
-          <li><strong>1/2:</strong> revisar com leitura e prática.</li>
-          <li><strong>0/2:</strong> estudar desde o início.</li>
-        </ul>
+        <p>Comece por Suporte a aplicações. Faça até quatro perguntas por módulo, incluindo uma avançada quando houver. Com quatro respostas e pelo menos 80% de acerto, o plano pode sugerir o teste de conclusão.</p>
         ${ctx.state.diagnosticDoneAt ? html`<p class="small muted">Você já fez o diagnóstico. Refazer atualiza a estimativa dos módulos respondidos.</p>` : ''}
         <h3>Trilhas a diagnosticar</h3>
         <div class="chips">${cat.tracks.map((t) => html`<button class="chip t-${t.color} ${picked.has(t.id) ? 'active' : ''}" aria-pressed="${picked.has(t.id)}" data-action="diag-track" data-arg="${t.id}">${t.id} · ${t.short} (${counts[t.id]})</button>`)}</div>
-        <p class="small">${total} perguntas · cerca de ${Math.round(total * 0.6)} min. Dá para parar e fazer as trilhas separadamente.</p>
+        <p class="small">${total} perguntas · cerca de ${total} min. Faça uma trilha por sessão para salvar o resultado ao terminar.</p>
         <button class="btn primary" data-action="diag-start" ${picked.size ? '' : 'disabled'}>${icon('play', 16)} Começar</button>
       </section>`;
   }

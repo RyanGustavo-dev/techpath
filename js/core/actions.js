@@ -54,7 +54,10 @@ export function reviewCard(state, cardId, rating, today) {
 
 export function completeLab(state, labId, { selfRating, notes = '' }, today) {
   const lab = state.labs[labId] || (state.labs[labId] = { stages: {}, checks: [] });
-  lab.completedAt = lab.completedAt || today;
+  lab.completedAt ||= today;
+  lab.lastPracticedAt = today;
+  const practiceDates = lab.practiceDates || [lab.completedAt];
+  if (!practiceDates.includes(today)) lab.practiceDates = [...practiceDates, today].slice(-120);
   lab.selfRating = selfRating;
   lab.notes = notes;
   recordActivity(state, today, 10);
